@@ -1,19 +1,27 @@
 from flask import Flask, redirect, url_for, render_template, url_for, redirect, flash
 from requests import request
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import InputRequired, Length, ValidationError
+from flask_login import login_user, LoginManager, login_required, logout_user
 from flask_bcrypt import Bcrypt
 
+# DB Import
+from dbConfig import *
 
+# Forms Import
+from forms import *
+
+#Construct Flask App and Configure DB
 app = Flask(__name__)
-db = SQLAlchemy(app)
-# db.create_all()
-bcrypt = Bcrypt(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'key'
+
+#Initialize SQLAlchemy with Flask App
+db.init_app(app)
+# Use manual request to create all tables defined in dbConfig
+with app.app_context():
+    db.create_all()
+
+
+bcrypt = Bcrypt(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -22,30 +30,6 @@ login_manager.login_view = "login"
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
-
-
-
-class RegisterForm(FlaskForm):
-    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], render_kw={"placeholder":"Username"}, )
-    password = PasswordField(validators=[InputRequired(), Length(min=8, max=20)], render_kw={"placeholder":"Passowrd"})
-    submit = SubmitField("Register")
-
-    def validate_username(self, username):
-        exists = User.query.filter_by(username=username.data).first()
-        if exists:
-            raise ValidationError("Username already exists, please choose a different one.")
-        
-
-class LoginForm(FlaskForm):
-    username = StringField(validators=[InputRequired(), Length(min=4, max=20)], render_kw={"placeholder":"Username"})
-    password = PasswordField(validators=[InputRequired(), Length(min=8, max=20)], render_kw={"placeholder":"Password"})
-    submit = SubmitField("Login")
 
 
 @app.route('/', methods=['GET', 'POST'])
