@@ -1,5 +1,4 @@
 from flask import Flask, redirect, url_for, render_template, url_for, redirect, flash
-import openai
 from requests import request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
